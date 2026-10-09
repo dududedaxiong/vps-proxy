@@ -5,11 +5,15 @@ set -e
 TOKEN="$1"
 if [ -z "$TOKEN" ]; then echo "用法: bash -s <TOKEN>"; exit 1; fi
 
-# 安装 cloudflared (via Go, IPv6 可用)
+# 安装 cloudflared (go build 方式，go install 不支持 replace 指令)
 if ! command -v cloudflared >/dev/null 2>&1; then
   echo "正在安装 cloudflared..."
-  go install github.com/cloudflare/cloudflared/cmd/cloudflared@latest
-  cp /root/go/bin/cloudflared /usr/local/bin/ && chmod +x /usr/local/bin/cloudflared
+  rm -rf /tmp/cfbuild && mkdir -p /tmp/cfbuild && cd /tmp/cfbuild
+  go mod init tmp >/dev/null 2>&1
+  go get github.com/cloudflare/cloudflared/cmd/cloudflared@latest 2>&1 | tail -2
+  go build -o /usr/local/bin/cloudflared github.com/cloudflare/cloudflared/cmd/cloudflared
+  chmod +x /usr/local/bin/cloudflared
+  cd / && rm -rf /tmp/cfbuild
 fi
 cloudflared --version
 
