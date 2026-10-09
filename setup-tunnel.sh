@@ -5,20 +5,24 @@ set -e
 TOKEN="$1"
 if [ -z "$TOKEN" ]; then echo "用法: bash -s <TOKEN>"; exit 1; fi
 
-# 安装 cloudflared (Cloudflare apt 源，有 IPv6)
+# 安装 cloudflared (从 Go 代理下载源码包编译，绕开 go install 限制)
 if ! command -v cloudflared >/dev/null 2>&1; then
   echo "正在安装 cloudflared..."
-  mkdir -p /usr/share/keyrings
-  curl -sL https://pkg.cloudflare.com/cloudflare-main.gpg -o /usr/share/keyrings/cloudflare-main.gpg
-  echo "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main" > /etc/apt/sources.list.d/cloudflared.list
-  apt-get update -qq 2>&1 | tail -1
-  apt-get install -y -qq cloudflared 2>&1 | tail -2
+  VER=$(curl -sL "https://proxy.golang.org/github.com/cloudflare/cloudflared/@v/list" | sort -V | tail -1)
+  echo "版本: $VER"
+  rm -rf /tmp/cfbuild && mkdir -p /tmp/cfbuild && cd /tmp/cfbuild
+  curl -sL "https://proxy.golang.org/github.com/cloudflare/cloudflared/@v/${VER}.zip" -o cf.zip
+  unzip -q cf.zip
+  cd "github.com/cloudflare/cloudflared@${VER}"
+  go build -o /usr/local/bin/cloudflared ./cmd/cloudflared
+  chmod +x /usr/local/bin/cloudflared
+  cd / && rm -rf /tmp/cfbuild
 fi
 cloudflared --version
 
 # PM2 启动
 pm2 delete cf-tunnel 2>/dev/null || true
-pm2 start /usr/bin/cloudflared --name cf-tunnel -- tunnel --no-autoupdate run --token "$TOKEN"
+pm2 start /usr/local/bin/cloudflared --name cf-tunnel -- tunnel --no-autoupdate run --token "$TOKEN"
 pm2 save
 
 sleep 10
