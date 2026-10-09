@@ -28,18 +28,13 @@ INDEX = """<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport
 <style>body{font-family:system-ui;max-width:640px;margin:40px auto;padding:0 16px;background:#0f1115;color:#e6e6e6}h2{margin-top:32px}input,textarea,select{width:100%;padding:10px;margin:8px 0;background:#1a1d24;border:1px solid #333;color:#fff;border-radius:6px;box-sizing:border-box}button{padding:10px 24px;background:#2f81f7;border:0;color:#fff;border-radius:6px;cursor:pointer}#out{margin-top:12px;word-break:break-all;color:#7ee787}.row{display:flex;gap:8px}.row>*{flex:1}</style></head><body>
 <h1>🔗 短链接 · 📋 Pastebin</h1>
 <h2>短链接</h2><input id="u" placeholder="https://...">
-<div class="row"><select id="ue"><option value="0">永不过期</option><option value="1">1小时</option><option value="24">1天</option><option value="168">7天</option><option value="720">30天</option></select><input id="up" type="password" placeholder="访问密码(可选)"></div>
+<div class="row"><select id="ue"><option value="0">永不过期</option><option value="1">1小时</option><option value="24">1天</option><option value="168">7天</option><option value="720">30天</option><option value="custom">自定义…</option></select><input id="up" type="password" placeholder="访问密码(可选)"></div><div class="row" id="ucr" style="display:none"><input id="uc" type="number" min="1" placeholder="自定义小时数，如 48"><input id="ucm" type="number" min="1" placeholder="或分钟数，如 30"></div>
 <button onclick="go('shorten')">生成</button>
 <h2>Pastebin</h2><textarea id="t" rows="6" placeholder="粘贴文本..."></textarea>
-<div class="row"><select id="pe"><option value="0">永不过期</option><option value="1">1小时</option><option value="24">1天</option><option value="168">7天</option><option value="720">30天</option></select><input id="pp" type="password" placeholder="访问密码(可选)"></div>
+<div class="row"><select id="pe"><option value="0">永不过期</option><option value="1">1小时</option><option value="24">1天</option><option value="168">7天</option><option value="720">30天</option><option value="custom">自定义…</option></select><input id="pp" type="password" placeholder="访问密码(可选)"></div><div class="row" id="pcr" style="display:none"><input id="pc" type="number" min="1" placeholder="自定义小时数，如 48"><input id="pcm" type="number" min="1" placeholder="或分钟数，如 30"></div>
 <button onclick="go('paste')">发布</button>
 <div id="out"></div>
-<script>async function go(k){const out=document.getElementById('out');out.textContent='...';
-const p=k=='shorten'?'u':'t', e=document.getElementById(k=='shorten'?'ue':'pe').value, pw=document.getElementById(k=='shorten'?'up':'pp').value;
-const body=k=='shorten'?{url:document.getElementById('u').value}:{content:document.getElementById('t').value};
-body.expires_in_hours=parseInt(e); if(pw) body.password=pw;
-const r=await fetch('/api/'+k,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-const j=await r.json();out.innerHTML=j.ok?('✅ <a href="'+j.link+'" style="color:#7ee787">'+j.link+'</a>'):('❌ '+j.err);}</script>
+<script>document.getElementById('ue').onchange=e=>{document.getElementById('ucr').style.display=e.target.value=='custom'?'flex':'none';};document.getElementById('pe').onchange=e=>{document.getElementById('pcr').style.display=e.target.value=='custom'?'flex':'none';};async function go(k){const out=document.getElementById('out');out.textContent='...';const isS=k=='shorten';const e=document.getElementById(isS?'ue':'pe').value,pw=document.getElementById(isS?'up':'pp').value;let hours=0;if(e=='custom'){const h=parseFloat(document.getElementById(isS?'uc':'pc').value)||0;const m=parseFloat(document.getElementById(isS?'ucm':'pcm').value)||0;hours=h+m/60;}else hours=parseFloat(e)||0;const body=isS?{url:document.getElementById('u').value}:{content:document.getElementById('t').value};body.expires_in_hours=hours;if(pw) body.password=pw;const r=await fetch('/api/'+k,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json();out.innerHTML=j.ok?('✅ <a href="'+j.link+'" style="color:#7ee787">'+j.link+'</a>'):('❌ '+j.err);}</script>
 </body></html>"""
 
 PWFORM = """<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>需要密码</title>
